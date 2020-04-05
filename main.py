@@ -28,7 +28,7 @@ def metoda():
     return{"method": "DELETE"}
 
 @app.post("/patient")
-def create_patient(mydict: dict={"name": "IMIE", "surename": "NAZWISKO"}):
+def create_patient(mydict):
     i=i+1
     return {"id": i, "patient": f'{mydict}'}
 
