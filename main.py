@@ -13,6 +13,11 @@ def metoda():
     return{"method": "GET"}
 
 
+@app.post("/method")
+def metoda():
+    return{"method": "POST"}
+
+
 
 
 
