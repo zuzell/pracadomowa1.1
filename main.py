@@ -4,6 +4,8 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
+i=0
+
 @app.get("/")
 def root():
     return {"message": "Hello World during the coronavirus pandemic!"}
@@ -24,6 +26,11 @@ def metoda():
 @app.delete("/method")
 def metoda():
     return{"method": "DELETE"}
+
+@app.post("/patient")
+def create_patient(mydict):
+    i += 1
+    return {"id": i, "patient": f'{mydict}'}
 
 
 
