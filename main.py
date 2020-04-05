@@ -13,7 +13,7 @@ class PatientRq(BaseModel):
 
 class PatientResp(BaseModel):
     id: int=i
-    received: Dict
+    received: dict
 
 
 @app.get("/")
@@ -44,7 +44,7 @@ def metoda():
 @app.post("/patient", response_model=PatientResp)
 def create_patient(rq: PatientRq):
     i=i+ 1
-    return PatientResp(recived=rq.dict())
+    return PatientResp(received=rq.dict())
 
 
 
