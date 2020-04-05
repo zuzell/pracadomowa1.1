@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-app.counter = 0
+i=0
 
 @app.get("/")
 def root():
@@ -29,8 +29,7 @@ def metoda():
 
 @app.post("/patient")
 def create_patient(mydict: dict={}):
-    app.counter += 1
-    i= app.counter
+    i=i+1
     return {"id": i, "patient": f'{mydict}'}
 
 
