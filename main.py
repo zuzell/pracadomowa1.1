@@ -8,7 +8,7 @@ i=0
 
 @app.get("/")
 def root():
-    return {"message": "Hello World during the coronavirus pandemic!"}
+    return {"message": "Hello World during the coronavirus pandemicaaa!"}
 
 @app.get("/method")
 def metoda():
@@ -28,7 +28,7 @@ def metoda():
     return{"method": "DELETE"}
 
 @app.post("/patient")
-def create_patient(mydict: dict={}):
+def create_patient(mydict: dict={"name": "IMIE", "surename": "NAZWISKO"}):
     i=i+1
     return {"id": i, "patient": f'{mydict}'}
 
