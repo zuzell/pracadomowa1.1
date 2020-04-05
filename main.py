@@ -1,10 +1,20 @@
 from fastapi import FastAPI
-
+from pydantic import BaseModel
 
 
 app = FastAPI()
 
 i=0
+
+class PatientRq(BaseModel):
+    name: str
+    surename: str
+
+
+class PatientResp(BaseModel):
+    id: int=i
+    received: Dict
+
 
 @app.get("/")
 def root():
@@ -27,10 +37,14 @@ def metoda():
 def metoda():
     return{"method": "DELETE"}
 
-@app.post("/patient")
-def create_patient(mydict):
-    i=i+1
-    return {"id": i, "patient": f'{mydict}'}
+
+
+
+
+@app.post("/patient", response_model=PatientResp)
+def create_patient(rq: PatientRq):
+    i=i+ 1
+    return PatientResp(recived=rq.dict())
 
 
 
