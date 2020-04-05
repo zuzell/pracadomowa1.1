@@ -17,6 +17,14 @@ def metoda():
 def metoda():
     return{"method": "POST"}
 
+@app.put("/method")
+def metoda():
+    return{"method": "PUT"}
+
+@app.delete("/method")
+def metoda():
+    return{"method": "DELETE"}
+
 
 
 
