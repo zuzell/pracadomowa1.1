@@ -30,7 +30,8 @@ def metoda():
 @app.post("/patient")
 def create_patient(mydict: dict={}):
     app.counter += 1
-    return {"id": app.counter, "patient": f'{mydict}'}
+    i= app.counter
+    return {"id": i, "patient": f'{mydict}'}
 
 
 
