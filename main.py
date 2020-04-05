@@ -8,6 +8,11 @@ app = FastAPI()
 def root():
     return {"message": "Hello World during the coronavirus pandemic!"}
 
+@app.get("/{method}")
+def metoda(method):
+    return{"method": f"{method}"}
+
+
 
 
 
