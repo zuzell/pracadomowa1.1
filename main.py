@@ -3,19 +3,18 @@ from pydantic import BaseModel
 
 
 app = FastAPI()
-
 app.counter=0
+
 
 class PatientRq(BaseModel):
     name: str
     surename: str
 
-
 class PatientResp(BaseModel):
     id: str
     received: dict
 
-
+        
 @app.get("/")
 def root():
     return {"message": "Hello World during the coronavirus pandemic!"}
@@ -23,7 +22,6 @@ def root():
 @app.get("/method")
 def metoda():
     return{"method": "GET"}
-
 
 @app.post("/method")
 def metoda():
@@ -36,10 +34,6 @@ def metoda():
 @app.delete("/method")
 def metoda():
     return{"method": "DELETE"}
-
-
-
-
 
 @app.post("/patient")
 def create_patient(rq: PatientRq):
