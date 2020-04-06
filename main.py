@@ -1,10 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 
 app = FastAPI()
 
-i=0
+app.counter=0
 
 class PatientRq(BaseModel):
     name: str
@@ -12,7 +12,7 @@ class PatientRq(BaseModel):
 
 
 class PatientResp(BaseModel):
-    id: int=i
+    id: str
     received: dict
 
 
@@ -41,10 +41,16 @@ def metoda():
 
 
 
-@app.post("/patient", response_model=PatientResp)
+@app.post("/patient")
 def create_patient(rq: PatientRq):
-    i=i+ 1
-    return PatientResp(received=rq.dict())
+    app.counter +=1
+    return PatientResp(id=str(app.counter), received=rq.dict())
+
+@app.get("/patient/{pk}")
+def patient_finder(pk):
+    if int(pk) > app.counter:
+        raise HTTPException(status_code=204, detail="No content")
+    return PatientRq(name="NAME", surename="SURENAME")
 
 
 
