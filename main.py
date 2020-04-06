@@ -11,7 +11,6 @@ class PatientRq(BaseModel):
 class PatientResp(BaseModel):
     id: str
     patient: dict
-
         
 @app.get("/")
 def root():
@@ -47,9 +46,3 @@ def patient_finder(pk):
     if int(pk) > app.counter:
         raise HTTPException(status_code=204, detail="No content")
     return PatientRq(name="NAME", surename="SURENAME")
-
-
-
-
-
-
