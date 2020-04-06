@@ -33,6 +33,10 @@ def metoda():
 def metoda():
     return{"method": "DELETE"}
 
+@app.get('/num/{p}')
+def counter(p):
+    return str(p)
+
 @app.post("/patient")
 def create_patient(rq: PatientRq):
     app.counter += 1
