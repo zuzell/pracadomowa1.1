@@ -1,10 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-
 app = FastAPI()
-app.counter=0
-
+app.counter = 0
 
 class PatientRq(BaseModel):
     name: str
@@ -12,7 +10,7 @@ class PatientRq(BaseModel):
 
 class PatientResp(BaseModel):
     id: str
-    received: dict
+    patient: dict
 
         
 @app.get("/")
@@ -37,8 +35,8 @@ def metoda():
 
 @app.post("/patient")
 def create_patient(rq: PatientRq):
-    app.counter +=1
-    return PatientResp(id=str(app.counter), received=rq.dict())
+    app.counter += 1
+    return PatientResp(id=str(app.counter), patient=rq.dict())
 
 @app.get("/patient/{pk}")
 def patient_finder(pk):
