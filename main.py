@@ -1,48 +1,38 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Response, HTTPException, Request
+from hashlib import sha256
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+from starlette.responses import RedirectResponse
+
 
 app = FastAPI()
-app.counter = 0
+app.num = 0
+app.count = -1
+app.users = {"trudnY": "PaC13Nt", "admin": "admin"}
+app.secret = "secret"
+app.tokens = []
+patlist = []
+templates = Jinja2Templates(directory="templates")
 
-class PatientRq(BaseModel):
-    name: str
-    surename: str
-
-class PatientResp(BaseModel):
-    id: str
-    patient: dict
-        
 @app.get("/")
 def root():
-    return {"message": "Hello World during the coronavirus pandemic!"}
+	return {"message": "Hello World during the coronavirus pandemic!"}
 
-@app.get("/method")
-def metoda():
-    return{"method": "GET"}
 
-@app.post("/method")
-def metoda():
-    return{"method": "POST"}
+@app.get("/welcome")
+def welcome_to_the_jungle():
+	return {"message": "Welcome to the jungle! We have funny games!"}
 
-@app.put("/method")
-def metoda():
-    return{"method": "PUT"}
 
-@app.delete("/method")
-def metoda():
-    return{"method": "DELETE"}
-
-@app.get('/num/{p}')
-def counter(p):
-    return str(p)
-
-@app.post("/patient")
-def create_patient(rq: PatientRq):
-    app.counter += 1
-    return PatientResp(id=str(app.counter), patient=rq.dict())
-
-@app.get("/patient/{pk}")
-def patient_finder(pk):
-    if int(pk) > app.counter:
-        raise HTTPException(status_code=204, detail="No content")
-    return PatientRq(name="NAME", surename="SURENAME")
+@app.post("/login")
+def login_to_app(user: str, passw: str, response: Response,request: Request ):
+	if user in app.users and passw == app.users[user]:
+		s_token = sha256(bytes(f"{user}{passw}{app.secret}", encoding='utf8')).hexdigest()
+		app.tokens += s_token
+		response.set_cookie(key="session_token",value=s_token)
+		response = RedirectResponse(url='/welcome')
+		print('logged in')
+		return templates.TemplateResponse("loginpage.html", {"request": request})
+	else:
+		raise HTTPException(status_code=401)
