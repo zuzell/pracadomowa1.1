@@ -1,5 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from hashlib import sha256
+from starlette.responses import RedirectResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi import Depends, Response, status
+import secrets
+
+security = HTTPBasic()
 
 app = FastAPI()
 app.ID = 0
@@ -14,8 +21,6 @@ def root():
     return {"message": "Hello World during the coronavirus pandemic!"}
 
 
-### TASK 3 ###########################################################
-
 class PatientRq(BaseModel):
 	name: str
 	surname: str
@@ -24,30 +29,22 @@ class PatientResp(BaseModel):
 	id: int
 	patient: dict
 
-#@app.post("/patient", response_model=PatientResp)
+
 def receive_patient(rq: PatientRq):
 	if app.ID not in app.patients.keys():
 		app.patients[app.ID] = rq.dict()
 		app.ID += 1
 	return PatientResp(id=app.ID, patient=rq.dict())
 
-### TASK 4 ###########################################################
-	
-#@app.get("/patient/{pk}")
+
+
 async def return_patient(pk: int):
     if pk in app.patients.keys():
     	return app.patients[pk]
     else:
     	raise HTTPException(status_code=204, detail="Item not found")
 
-######################################################################
-######################################################################
-#####################       ASSIGNMENT 3       #######################
-######################################################################
-######################################################################
 
-
-### TASK 1 & 4 #######################################################
 
 from fastapi.templating import Jinja2Templates
 from fastapi import Cookie, Request
@@ -61,16 +58,10 @@ def do_welcome(request: Request, session_token: str = Cookie(None)):
 	return templates.TemplateResponse("item.html", {"request": request, "user": "trudnY"})
 
 
-### TASK 2 ###########################################################
-from hashlib import sha256
-from starlette.responses import RedirectResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi import Depends, Response, status
-import secrets
 
-security = HTTPBasic()
 
-@app.get("/login")
+
+
 @app.post("/login")
 def get_current_user(response: Response, credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, "trudnY")
@@ -83,7 +74,7 @@ def get_current_user(response: Response, credentials: HTTPBasicCredentials = Dep
     response.headers["Location"] = "/welcome"
     response.status_code = status.HTTP_302_FOUND 
 
-### TASK 3 ###########################################################
+
 
 @app.post("/logout")
 def logout(*, response: Response, session_token: str = Cookie(None)):
@@ -92,7 +83,6 @@ def logout(*, response: Response, session_token: str = Cookie(None)):
 	app.session_tokens.remove(session_token)
 	return RedirectResponse("/")
 
-### TASK 5 ###########################################################
 @app.post("/patient")
 def add_patient(response: Response, patient: PatientRq, session_token: str = Cookie(None)):
 	if session_token not in app.session_tokens:
@@ -126,8 +116,7 @@ def delete_patient(response: Response, id: int, session_token: str = Cookie(None
 		raise HTTPException(status_code=401, detail="Unathorised")
 	app.patients.pop(id, None)		
 	response.status_code = status.HTTP_204_NO_CONTENT
-#
-#
+
 
 
 
