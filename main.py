@@ -1,10 +1,3 @@
-# main.py
-######################################################################
-######################################################################
-#####################       ASSIGNMENT 1       #######################
-######################################################################
-######################################################################
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -14,29 +7,12 @@ app.patients = {}
 app.session_tokens = []
 app.secret_key = "very constant and random secret, best 64 characters, here it is."
 
-### TASK 1 ###########################################################
+
 
 @app.get("/")
 def root():
     return {"message": "Hello World during the coronavirus pandemic!"}
 
-### TASK 2 ###########################################################
-
-@app.get("/method")
-def root():
-    return {"method": "GET"}
-
-@app.put("/method")
-def root():
-    return {"method": "PUT"}
-
-@app.post("/method")
-def root():
-    return {"method": "POST"}
-
-@app.delete("/method")
-def root():
-    return {"method": "DELETE"}
 
 ### TASK 3 ###########################################################
 
@@ -94,7 +70,7 @@ import secrets
 
 security = HTTPBasic()
 
-
+@app.get("/login")
 @app.post("/login")
 def get_current_user(response: Response, credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, "trudnY")
