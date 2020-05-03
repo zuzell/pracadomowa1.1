@@ -23,4 +23,13 @@ async def tracks(page: int = 0, per_page: int = 10):
 	tracks = await cursor.fetchall()
 	return tracks
 
+@app.get("/tracks/composers")
+async def tracks(composer_name, response: Response):
+	app.db_connection.row_factory = lambda cursor, x: x[0]
+	cursor = await app.db_connection.execute("SELECT Name FROM tracks WHERE Composer = ? ORDER BY Name", (composer_name,))
+	tracks = await cursor.fetchall()
+	if len(tracks) == 0:
+		response.status_code = status.HTTP_404_NOT_FOUND
+		return {"detail": {"error": "Your error"}}
+	return tracks
 
