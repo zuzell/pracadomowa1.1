@@ -13,11 +13,11 @@ class Album(BaseModel):
 
 @app.on_event("startup")
 async def startup():
-	router.db_connection = await aiosqlite.connect('chinook.db')
+	app.db_connection = await aiosqlite.connect('chinook.db')
 
 @app.on_event("shutdown")
 async def shutdown():
-	await router.db_connection.close()
+	await app.db_connection.close()
 
 
 @app.get("/tracks")
