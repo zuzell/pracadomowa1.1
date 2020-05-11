@@ -14,7 +14,7 @@ class GiveMeSomethingRq(BaseModel):
     title: str
     artist_id: int
 
-'''
+
 @app.on_event("startup")
 async def startup():
 	app.db_connection = await aiosqlite.connect('chinook.db')
@@ -22,15 +22,7 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
 	await app.db_connection.close()
-'''
-	
-@app.on_event("startup")
-async def startup():
-    app.db_connection = sqlite3.connect('chinook.db')
 
-
-@app.on_event("shutdown")
-async def shutdown():
     app.db_connection.close()
 
 
@@ -90,7 +82,7 @@ class Customer(BaseModel):
 
 @app.put("/customers/{customer_id}")
 async def tracks_composers(response: Response, customer_id: int, customer: Customer):
-	cursor = await router.db_connection.execute("SELECT CustomerId FROM customers WHERE CustomerId = ?",
+	cursor = await app.db_connection.execute("SELECT CustomerId FROM customers WHERE CustomerId = ?",
 		(customer_id, ))
 	result = await cursor.fetchone()
 	if result is None:
@@ -108,10 +100,10 @@ async def tracks_composers(response: Response, customer_id: int, customer: Custo
 			query += f"{key}=?, "
 		query = query[:-2]
 		query += " WHERE CustomerId = ?"
-		cursor = await router.db_connection.execute(query, tuple(values))
-		await router.db_connection.commit()
-	router.db_connection.row_factory = aiosqlite.Row
-	cursor = await router.db_connection.execute("SELECT * FROM customers WHERE CustomerId = ?",
+		cursor = await app.db_connection.execute(query, tuple(values))
+		await app.db_connection.commit()
+	app.db_connection.row_factory = aiosqlite.Row
+	cursor = await app.db_connection.execute("SELECT * FROM customers WHERE CustomerId = ?",
 		(customer_id, ))
 	customer = await cursor.fetchone()
 	return customer
@@ -119,16 +111,16 @@ async def tracks_composers(response: Response, customer_id: int, customer: Custo
 @app.get("/sales")
 async def tracks_composers(response: Response, category: str):
 	if category == "customers":
-		router.db_connection.row_factory = aiosqlite.Row
-		cursor = await router.db_connection.execute(
+		app.db_connection.row_factory = aiosqlite.Row
+		cursor = await app.db_connection.execute(
 			"SELECT invoices.CustomerId, Email, Phone, ROUND(SUM(Total), 2) AS Sum "
 			"FROM invoices JOIN customers on invoices.CustomerId = customers.CustomerId "
 			"GROUP BY invoices.CustomerId ORDER BY Sum DESC, invoices.CustomerId")
 		stats = await cursor.fetchall()
 		return stats
 	if category == "genres":
-		router.db_connection.row_factory = aiosqlite.Row
-		cursor = await router.db_connection.execute(
+		app.db_connection.row_factory = aiosqlite.Row
+		cursor = await app.db_connection.execute(
 			"SELECT genres.Name, SUM(Quantity) AS Sum FROM invoice_items "
 			"JOIN tracks ON invoice_items.TrackId = tracks.TrackId "
 			"JOIN genres ON tracks.GenreId = genres.GenreId "
