@@ -10,20 +10,23 @@ app = FastAPI()
 router = APIRouter()
 
 	
-class Album(BaseModel):
-	title: str
-	artist_id: int
+class AlbumRequest(BaseModel):
+    title: str
+    artist_id: int
+
+class AlbumResponse(BaseModel):
+    AlbumId: int
+    Title: str
+    ArtistId: int
 
 
 @app.on_event("startup")
 async def startup():
-	app.db_connection = await aiosqlite.connect('chinook.db')
+    app.db_connection = sqlite3.connect('chinook.db')
 
 @app.on_event("shutdown")
 async def shutdown():
-	await app.db_connection.close()
-
-    app.db_connection.close()
+    await app.db_connection.close()
 
 
 @app.get("/tracks")
@@ -45,88 +48,62 @@ async def tracks(composer_name, response: Response):
 	return tracks
 
 
-@app.post("/albums")
-async def add_album(response: Response, album: Album):
-	app.db_connection.row_factory = None
-	cursor = await app.db_connection.execute("SELECT ArtistId FROM artists WHERE ArtistId = ?",
-		(album.artist_id, ))
-	result = await cursor.fetchone()
-	if result is None:
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return {"detail":{"error":"Artist with that ID does not exist."}}
-	cursor = await app.db_connection.execute("INSERT INTO albums (Title, ArtistId) VALUES (?, ?)",
-		(album.title, album.artist_id))
-	await app.db_connection.commit()
-	response.status_code = status.HTTP_201_CREATED
-	return {"AlbumId": cursor.lastrowid, "Title": album.title, "ArtistId": album.artist_id}
+@app.post("/albums", response_model=AlbumResponse)
+async def receive_album(response: Response, request: AlbumRequest):
+    exist = app.db_connection.execute("SELECT Name FROM artists WHERE ArtistId = ?", (request.artist_id,)).fetchall()
+    if not exist:
+        raise HTTPException(status_code=404, detail={"error": "There is no such composer"})
+    cursor = app.db_connection.execute("INSERT INTO albums(ArtistId, Title) VALUES (?, ?)", (request.artist_id, request.title))
+    app.db_connection.commit()
+    new_album_id = cursor.lastrowid
+    response.status_code = 201
+    return AlbumResponse(AlbumId=new_album_id, Title=request.title, ArtistId=request.artist_id)
 
-@app.get("/albums/{album_id}")
-async def tracks_composers(response: Response, album_id: int):
-	app.db_connection.row_factory = aiosqlite.Row
-	cursor = await app.db_connection.execute("SELECT * FROM albums WHERE AlbumId = ?",
-		(album_id, ))
-	album = await cursor.fetchone()
-	if album is None: # Not required by tests, but why not :)
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return {"detail":{"error":"Album with that ID does not exist."}}
-	return album
+@app.get("/albums/{album_id}", response_model=AlbumResponse)
+async def show_album(album_id: int):
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute("SELECT * FROM albums WHERE AlbumId = ?", (album_id,)).fetchall()
 
-class Customer(BaseModel):
-	company: str = None
-	address: str = None
-	city: str = None
-	state: str = None
-	country: str = None
-	postalcode: str = None
-	fax: str = None
+    if not data:
+        raise HTTPException(status_code=404, detail={"errors": "There is no such composer"})
+    return AlbumResponse(AlbumId=album_id, Title=data[0]["title"], ArtistId=data[0]["artistId"])
 
 @app.put("/customers/{customer_id}")
-async def tracks_composers(response: Response, customer_id: int, customer: Customer):
-	cursor = await app.db_connection.execute("SELECT CustomerId FROM customers WHERE CustomerId = ?",
-		(customer_id, ))
-	result = await cursor.fetchone()
-	if result is None:
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return {"detail":{"error":"Customer with that ID does not exist."}}
-	update_customer = customer.dict(exclude_unset=True)
-	values = list(update_customer.values())
-	if len(values) != 0:
-		values.append(customer_id)
-		query = "UPDATE customers SET "
-		for key, value in update_customer.items():
-			key.capitalize()
-			if key == "Postalcode":
-				key = "PostalCode"
-			query += f"{key}=?, "
-		query = query[:-2]
-		query += " WHERE CustomerId = ?"
-		cursor = await app.db_connection.execute(query, tuple(values))
-		await app.db_connection.commit()
-	app.db_connection.row_factory = aiosqlite.Row
-	cursor = await app.db_connection.execute("SELECT * FROM customers WHERE CustomerId = ?",
-		(customer_id, ))
-	customer = await cursor.fetchone()
-	return customer
+async def update_customer(customer_id: int, request: dict={}):
+    app.db_connection.row_factory = sqlite3.Row
+    customer = app.db_connection.execute("SELECT * FROM customers WHERE CustomerId = ?", (customer_id,)).fetchall()
+
+    if not customer:
+        raise HTTPException(status_code=404, detail={"error": "There is no such customer"})
+    queue = "UPDATE customers SET "
+
+    if request:
+        for key in request:
+            queue += f"{key} = \'{request[key]}\', "
+        queue = queue[:-2]
+        queue += " WHERE CustomerId = " + str(customer_id)
+        app.db_connection.execute(queue)
+        app.db_connection.commit()
+    return app.db_connection.execute("SELECT * FROM customers WHERE CustomerId = ?",(customer_id,)).fetchone()
 
 @app.get("/sales")
-async def tracks_composers(response: Response, category: str):
-	if category == "customers":
-		app.db_connection.row_factory = aiosqlite.Row
-		cursor = await app.db_connection.execute(
-			"SELECT invoices.CustomerId, Email, Phone, ROUND(SUM(Total), 2) AS Sum "
-			"FROM invoices JOIN customers on invoices.CustomerId = customers.CustomerId "
-			"GROUP BY invoices.CustomerId ORDER BY Sum DESC, invoices.CustomerId")
-		stats = await cursor.fetchall()
-		return stats
-	if category == "genres":
-		app.db_connection.row_factory = aiosqlite.Row
-		cursor = await app.db_connection.execute(
-			"SELECT genres.Name, SUM(Quantity) AS Sum FROM invoice_items "
-			"JOIN tracks ON invoice_items.TrackId = tracks.TrackId "
-			"JOIN genres ON tracks.GenreId = genres.GenreId "
-			"GROUP BY tracks.GenreId ORDER BY Sum DESC, genres.Name")
-		stats = await cursor.fetchall()
-		return stats
-	else:
-		response.status_code = status.HTTP_404_NOT_FOUND
-		return {"detail":{"error":"Unsuported category."}}
+async def show_numbers(category: str):
+    app.db_connection.row_factory = sqlite3.Row
+    
+    if category =="customers":
+        data = app.db_connection.execute("SELECT customers.CustomerId, Email, Phone, round(sum(Total),2) AS Sum FROM customers \
+                                         JOIN invoices ON customers.CustomerId = invoices.CustomerId \
+                                         GROUP BY customers.CustomerId \
+                                         ORDER BY Sum DESC, customers.CustomerId").fetchall()
+    elif category == "genres":
+        data = app.db_connection.execute("SELECT genres.Name, sum(Quantity) AS Sum FROM genres \
+                                         JOIN tracks ON tracks.GenreId = genres.GenreId \
+                                         JOIN invoice_items ON invoice_items.TrackId = tracks.TrackId \
+                                         GROUP BY genres.Name \
+                                         ORDER BY Sum DESC, genres.Name").fetchall()
+    else:
+        raise HTTPException(status_code=404, detail={"error": "There is no such category"})
+        
+    return data
+
+
