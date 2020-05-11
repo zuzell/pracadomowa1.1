@@ -45,31 +45,31 @@ async def tracks(composer_name, response: Response):
 	return tracks
 
 
-@app.post("/albums", status_code=201)
-async def root(rq: GiveMeSomethingRq):
-    cursor = app.db_connection.cursor()
-    tracksc = cursor.execute("SELECT * FROM artists WHERE artistid = ?", (rq.artist_id))
-    count = 0
-    for row in cursor:
-        count = 1
-        cursor = app.db_connection.execute("INSERT INTO albums (title, artistid) VALUES (?, ?)", (rq.title, rq.artist_id ))
-        app.db_connection.commit()
-        new_artist_id = cursor.lastrowid
-        app.db_connection.row_factory = sqlite3.Row
-        artist = app.db_connection.execute(
-        """SELECT * FROM albums WHERE albumid = ?""",
-        (new_artist_id, )).fetchone()
-        return artist
-    if count == 0:
-        raise HTTPException(status_code=404, detail="error")
+@app.post("/albums")
+async def add_album(response: Response, album: Album):
+	app.db_connection.row_factory = None
+	cursor = await app.db_connection.execute("SELECT ArtistId FROM artists WHERE ArtistId = ?",
+		(album.artist_id, ))
+	result = await cursor.fetchone()
+	if result is None:
+		response.status_code = status.HTTP_404_NOT_FOUND
+		return {"detail":{"error":"Artist with that ID does not exist."}}
+	cursor = await app.db_connection.execute("INSERT INTO albums (Title, ArtistId) VALUES (?, ?)",
+		(album.title, album.artist_id))
+	await app.db_connection.commit()
+	response.status_code = status.HTTP_201_CREATED
+	return {"AlbumId": cursor.lastrowid, "Title": album.title, "ArtistId": album.artist_id}
 
-
-@app.get("/albums/{album_id}", status_code=200)
-async def root(album_id: int):
-    app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute(
-        f"SELECT * FROM albums WHERE albumid = {album_id}").fetchone()
-    return data
+@app.get("/albums/{album_id}")
+async def tracks_composers(response: Response, album_id: int):
+	app.db_connection.row_factory = aiosqlite.Row
+	cursor = await app.db_connection.execute("SELECT * FROM albums WHERE AlbumId = ?",
+		(album_id, ))
+	album = await cursor.fetchone()
+	if album is None: # Not required by tests, but why not :)
+		response.status_code = status.HTTP_404_NOT_FOUND
+		return {"detail":{"error":"Album with that ID does not exist."}}
+	return album
 
 class Customer(BaseModel):
 	company: str = None
