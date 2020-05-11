@@ -3,16 +3,16 @@ import sqlite3
 from fastapi import FastAPI, APIRouter, status, Response, Request, HTTPException
 from pydantic import BaseModel
 import json
-from fastapi.responses import JSONResponse
+
 
 
 app = FastAPI()
 router = APIRouter()
 
 	
-class GiveMeSomethingRq(BaseModel):
-    title: str
-    artist_id: int
+class Album(BaseModel):
+	title: str
+	artist_id: int
 
 
 @app.on_event("startup")
