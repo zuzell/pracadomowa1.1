@@ -7,12 +7,15 @@ app = FastAPI()
 router = APIRouter()
 
 
+class Album(BaseModel):
+	title: str
+	artist_id: int
 
-@router.on_event("startup")
+@app.on_event("startup")
 async def startup():
 	router.db_connection = await aiosqlite.connect('chinook.db')
 
-@router.on_event("shutdown")
+@app.on_event("shutdown")
 async def shutdown():
 	await router.db_connection.close()
 
@@ -36,11 +39,8 @@ async def tracks(composer_name, response: Response):
 	return tracks
 
 
-class Album(BaseModel):
-	title: str
-	artist_id: int
 
-@router.post("/albums")
+@app.post("/albums")
 async def add_album(response: Response, album: Album):
 	router.db_connection.row_factory = None
 	cursor = await router.db_connection.execute("SELECT ArtistId FROM artists WHERE ArtistId = ?",
@@ -55,7 +55,7 @@ async def add_album(response: Response, album: Album):
 	response.status_code = status.HTTP_201_CREATED
 	return {"AlbumId": cursor.lastrowid, "Title": album.title, "ArtistId": album.artist_id}
 
-@router.get("/albums/{album_id}")
+@app.get("/albums/{album_id}")
 async def tracks_composers(response: Response, album_id: int):
 	router.db_connection.row_factory = aiosqlite.Row
 	cursor = await router.db_connection.execute("SELECT * FROM albums WHERE AlbumId = ?",
@@ -75,7 +75,7 @@ class Customer(BaseModel):
 	postalcode: str = None
 	fax: str = None
 
-@router.put("/customers/{customer_id}")
+@app.put("/customers/{customer_id}")
 async def tracks_composers(response: Response, customer_id: int, customer: Customer):
 	cursor = await router.db_connection.execute("SELECT CustomerId FROM customers WHERE CustomerId = ?",
 		(customer_id, ))
@@ -103,7 +103,7 @@ async def tracks_composers(response: Response, customer_id: int, customer: Custo
 	customer = await cursor.fetchone()
 	return customer
 
-@router.get("/sales")
+@app.get("/sales")
 async def tracks_composers(response: Response, category: str):
 	if category == "customers":
 		router.db_connection.row_factory = aiosqlite.Row
